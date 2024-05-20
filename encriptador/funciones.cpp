@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -31,11 +32,13 @@ void fEncrip(string strContenido, string strNarchivo) {
 	fstream file;
 	file.open(strNarchivo, ios::app);
 	//Bucle que encripta char a char
+	string strTodo;
 	for (short i = 0; i < strContenido.size(); i++)
 	{
 		char cLetra = strContenido[i] + sDesplazar;
-		file << cLetra;
+		strTodo += cLetra;
 	}
+	file << endl << strTodo;
 }
 // Funcion para Desencriptar
 void fDecrip(string strNarchivo) {
@@ -45,7 +48,7 @@ void fDecrip(string strNarchivo) {
 	string strLinea;
 	short sDesplazar = 26;
 	string strContent;
-
+	
 	// Leer y descartar la primera linea
 	if (getline(file, strLinea)) {
 		// Leer desde la segunda linea hasta el final del archivo
@@ -53,7 +56,8 @@ void fDecrip(string strNarchivo) {
 			strContent += strLinea;
 		}
 	}
-	// Bucle para descifraf char a char el contenido.
+	
+	// Bucle para descifrar char a char el contenido.
 	for (short i = 0; i < strContent.size(); i++) {
 		char cDecrip = strContent[i] - sDesplazar;
 		cout << cDecrip;
@@ -67,29 +71,77 @@ void fCverif(int iChecksum, string strNarchivo) {
 	string strLinea;
 	fAbertura(strNarchivo);
 	file.open(strNarchivo, ios::in);
-	// paso strlLinea (Numero entero) a int (Lo vi por internet :\)
-	int checksumArchivo = stoi(strLinea);
-	if (iChecksum != checksumArchivo) {
+	// paso strlLinea (String) a int (Lo vi por internet :\)
+	string strChecksum = to_string(iChecksum);
+	if (strLinea != strChecksum) {
 		cout << "Aviso: El archivo ha sido modificado." << endl;
 	}
 	file.close();
-
-	cout << "El checksum se ha verificado y actualizado correctamente." << endl;
 }
-
 // Funcion para escribir el checksum
-void fChangech(int iChecksum, string strNarchivo) {
+void fChangech(int iChecksumNuevo, string strNarchivo) {
 	fstream file;
 	fAbertura(strNarchivo);
-	file.open(strNarchivo);
-	file << iChecksum;
+	// Abro el archivo en modo lectura y escritura
+	file.open(strNarchivo, ios::in | ios::out);
+	// Leer la primera línea y almacenar el resto del contenido
+	string strPrimeraLinea;
+	getline(file, strPrimeraLinea);
+	string strRestoContenido;
+	// Lee hasta el final del archivo
+	getline(file, strRestoContenido, '\0');
+
+	// Limpiar el contenido del archivo
+	file.clear();
+	file.seekp(0);
+
+	string strChecksum = to_string(iChecksumNuevo);
+	// Escribir el nuevo checksum en la primera línea
+	file << strChecksum << std::endl;
+
+	// Escribir el resto del contenido en la línea siguiente
+	file << strRestoContenido;
+
+	std::cout << "La primera linea del archivo ha sido substituida con el nuevo checksum." << std::endl;
+
 	file.close();
 }
+// Funcion para hacer el nuevo checksum
+void fChecksumNuevo(string strContenido, string strNarchivo) {
+	int iChecksumNuevo = 0;
+	ifstream file;
+	string strLinea;
+	// Descartar la primera línea
+	getline(file, strLinea);
 
-void fChecksum(string strNarchivo, int iChecksum) {
+	// Estructura que saque de internet
+	stringstream strsArchivo;
+	// Leer y almacenar el resto del archivo
+	while (getline(file, strLinea)) {
+		strsArchivo << strLinea;
+	}
+
+	// Convertir el stringstream a string
+	string strArchivo = strsArchivo.str();
+
+	strArchivo += strContenido;
+	//Bucle que encripta char a char
+	for (short i = 0; i < strArchivo.size(); i++)
+	{
+		int iAsci = static_cast<int>(strArchivo[i]);
+		iChecksumNuevo += iAsci;
+	}
+
+	fChangech(iChecksumNuevo, strNarchivo);
+}
+
+// Funcion que comprueba el antiguo checksum y llama otras fucniones
+void fChecksum(string strNarchivo) {
 	fstream file;
 	string strLinea;
 	string strContent;
+	int iChecksumOrigin = 0;
+	
 	fAbertura(strNarchivo);
 	file.open(strNarchivo, ios::in);
 	// Leer y descartar la primera línea
@@ -104,42 +156,39 @@ void fChecksum(string strNarchivo, int iChecksum) {
 		// Guarda el valor ascii del caracter en una variable
 		int iAsci = static_cast<int>(strContent[i]);
 		// Suma el valor al checksum
-		iChecksum + iAsci;
+		iChecksumOrigin += iAsci;
 	}
 	//Llama a la funcion que inserta y verifica el checksum
-	fCverif(iChecksum, strNarchivo);
+	fCverif(iChecksumOrigin, strNarchivo);
 	file.close();
 }
 void fEscribir(string strNarchivo) {
 	fstream file;
 	string strContenido;
-	fAbertura(strNarchivo);
 	int iChecksum = 0;
+	fChecksum(strNarchivo);
+	fAbertura(strNarchivo);
 	bool bExit = false;
+	cout << "Escribe una frase" << endl;
 	while (bExit == false)
 	{
 		string strFrase;
-		cout << "Escribe una frase" << endl;
 		// Leer y descartar la primera línea
-		if (getline(file, strFrase)) {
-			// Leer desde la segunda línea hasta el final del archivo
-			getline(file, strFrase);
-			// Si la palabra es exit, se termina el programa.
-			if (strFrase == "exit")
-			{
-				bExit = true;
-			}
-			// Si la frase no es exit, introduce la frase a un string concatenandola con \n para que al desencriptar, haya saltos de linea
-			else
-			{
-				strContenido += strFrase + '\n';
-			}
+		getline(cin, strFrase);
+		if (strFrase == "exit")
+		{
+			bExit = true;
 		}
+		// Si la frase no es exit, introduce la frase a un string concatenandola con \n para que al desencriptar, haya saltos de linea
+		else 
+		{
+			strContenido += strFrase + '\n';
+		}
+		
 	}
 	// Cuando se sale del bucle, llamamos a las funciones para encriptar y para hacer el checksu,
-	fChecksum(strNarchivo, iChecksum);
 	fEncrip(strContenido, strNarchivo);
-	fChangech(iChecksum, strNarchivo);
+	fChecksumNuevo(strContenido, strNarchivo);
 	file.close();
 }
 
@@ -168,7 +217,7 @@ void fMenu() {
 			file.close();
 			// Insertamos una primera linea provisional para que no haya errores.
 			file.open(strNarchivo);
-			file << "Checksum0";
+			file << "12345";
 		}
 		
 	}
@@ -178,7 +227,7 @@ void fMenu() {
 		// Insertamos una primera linea provisional para que no haya errores.
 		fstream file;
 		file.open(strNarchivo);
-		file << "Checksum0";
+		file << "12345";
 	}
 	// Llamado a la funcion de escritura
 	fEscribir(strNarchivo);

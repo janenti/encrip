@@ -4,8 +4,5 @@
 
 int main() {
 	fMenu();
-
-
-
 	return 0;
 }
