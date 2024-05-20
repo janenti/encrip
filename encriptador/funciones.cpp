@@ -26,15 +26,72 @@ void fAbertura() {
 	if (!file.is_open()) {
 		cout << "No se pudo abrir el archivo" << endl;
 	}
-	else
-	{
-		cout << "Todo bien" << endl;
-	}
+}
 
+void fEncrip(string strContenido) {
+	short sDesplazar = 26;
+	fstream file;
+	file.open("palabras.txt", ios::app);
+	for (short i = 0; i < strContenido.size(); i++)
+	{
+		char cLetra = strContenido[i] + sDesplazar;
+		file << cLetra;
+	}
+}
+
+void fDecrip() {
+	fAbertura();
+	fstream file;
+	file.open("palabras.txt", ios::in);
+	string strLinea;
+	short sDesplazar = 26;
+	while (getline(file, strLinea)) {
+		for (short i = 0; i < strLinea.size(); i++)
+		{
+			char cDecrip = strLinea[i] - sDesplazar;
+			cout << cDecrip;
+		}
+	}
+	file.close();
 }
 
 void fEscribir() {
 	fstream file;
+	string strContenido;
+	
+	
+	fAbertura();
+	bool bExit = false;
+	while (bExit == false)
+	{
+		string strFrase;
+		cout << "Escribe una frase" << endl;
+		getline(cin, strFrase);
+		if (strFrase == "exit")
+		{
+			bExit = true;
+		}
+		else
+		{
+			strContenido += strFrase + '\n';
+		}
+		fEncrip(strContenido);
+	}
+
+	file.close();
+
+}
+
+
+void fChecksum() {
+	fAbertura();
+	fstream file;
+	file.open("palabras.txt", ios::in);
+
+}
+
+
+void fMenu() {
 
 	if (bVacio())
 	{
@@ -45,33 +102,19 @@ void fEscribir() {
 		cin >> sAccion;
 		if (sAccion == 1)
 		{
-			fAbertura();
-			string strLinea; 
-			while (getline(file, strLinea)) { 
-				cout << strLinea << endl; 
-			}
-			file.close(); 
+			fDecrip();
 		}
 		else if (sAccion == 2)
 		{
 			fAbertura();
-			string sLinea;
-			while (getline(file, sLinea)) {
-				sLinea.pop_back();
-			}
+			fstream file;
+			file.open("palabras.txt", std::ofstream::out | std::ofstream::trunc);
+			file.close();
 		}
 		
 	}
-	string sFrase; 
-	file.open("palabras.txt", ios::app); 
-	while (sFrase != "exit")
-	{
-		cout << "Escribe una frase" << endl;
-		cin >> sFrase;
-		file << sFrase << std::endl;
-		cout << "todo bien" << endl;
-	}
 	
-	file.close();
+	fEscribir();
+
 }
 
