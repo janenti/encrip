@@ -4,96 +4,144 @@
 
 using namespace std;
 
-
-bool bVacio() {
+// Funcion que verifica si el archivo esta vacio
+bool bVacio(string strNarchivo) {
 	fstream file;
-	file.open("palabras.txt");
+	file.open(strNarchivo);
 	string primeraLinea;
 	getline(file, primeraLinea);
 	if (primeraLinea.empty()) {
 		return false;
-		cout << "vacio" << endl;
 	}
 	else {
 		return true;
-		cout << "no vacio" << endl;
 	}
 }
-
-void fAbertura() {
+// Funcion que verifica si se puede abrir el archivo
+void fAbertura(string strNarchivo) {
 	fstream file;
-	file.open("palabras.txt");
+	file.open(strNarchivo);
 	if (!file.is_open()) {
 		cout << "No se pudo abrir el archivo" << endl;
 	}
 }
-
-void fEncrip(string strContenido) {
+// Funcion para encriptar
+void fEncrip(string strContenido, string strNarchivo) {
 	short sDesplazar = 26;
 	fstream file;
-	file.open("palabras.txt", ios::app);
+	file.open(strNarchivo, ios::app);
+	//Bucle que encripta char a char
 	for (short i = 0; i < strContenido.size(); i++)
 	{
 		char cLetra = strContenido[i] + sDesplazar;
 		file << cLetra;
 	}
 }
-
-void fDecrip() {
-	fAbertura();
+// Funcion para Desencriptar
+void fDecrip(string strNarchivo) {
+	fAbertura(strNarchivo);
 	fstream file;
 	file.open("palabras.txt", ios::in);
 	string strLinea;
 	short sDesplazar = 26;
-	while (getline(file, strLinea)) {
-		for (short i = 0; i < strLinea.size(); i++)
-		{
-			char cDecrip = strLinea[i] - sDesplazar;
-			cout << cDecrip;
+	string strContent;
+
+	// Leer y descartar la primera linea
+	if (getline(file, strLinea)) {
+		// Leer desde la segunda linea hasta el final del archivo
+		while (getline(file, strLinea)) {
+			strContent += strLinea;
 		}
 	}
+	// Bucle para descifraf char a char el contenido.
+	for (short i = 0; i < strContent.size(); i++) {
+		char cDecrip = strContent[i] - sDesplazar;
+		cout << cDecrip;
+	}
+	cout << endl;
+
 	file.close();
 }
+void fCverif(int iChecksum, string strNarchivo) {
+	fstream file;
+	string strLinea;
+	fAbertura(strNarchivo);
+	file.open(strNarchivo, ios::in);
+	// paso strlLinea (Numero entero) a int (Lo vi por internet :\)
+	int checksumArchivo = stoi(strLinea);
+	if (iChecksum != checksumArchivo) {
+		cout << "Aviso: El archivo ha sido modificado." << endl;
+	}
+	file << iChecksum;
+	file.close();
 
-void fEscribir() {
+	cout << "El checksum se ha verificado y actualizado correctamente." << endl;
+}
+
+
+void fChecksum(string strNarchivo) {
+	fstream file;
+	string strLinea;
+	string strContent;
+	fAbertura(strNarchivo);
+	file.open(strNarchivo, ios::in);
+	int iChecksum;
+	// Leer y descartar la primera línea
+	if (getline(file, strLinea)) {
+		// Leer desde la segunda línea hasta el final del archivo
+		while (getline(file, strLinea)) {
+			strContent += strLinea;
+		}
+	}
+	for (short i = 0; i < strContent.size(); i++) {
+
+		// Guarda el valor ascii del caracter en una variable
+		int iAsci = static_cast<int>(strContent[i]);
+		// Suma el valor al checksum
+		iChecksum = iChecksum + iAsci;
+	}
+	//Llama a la funcion que inserta y verifica el checksum
+	fCverif(iChecksum, strNarchivo);
+	file.close();
+}
+void fEscribir(string strNarchivo) {
 	fstream file;
 	string strContenido;
-	
-	
-	fAbertura();
+	fAbertura(strNarchivo);
 	bool bExit = false;
 	while (bExit == false)
 	{
 		string strFrase;
 		cout << "Escribe una frase" << endl;
-		getline(cin, strFrase);
-		if (strFrase == "exit")
-		{
-			bExit = true;
+		// Leer y descartar la primera línea
+		if (getline(file, strFrase)) {
+			// Leer desde la segunda línea hasta el final del archivo
+			getline(file, strFrase);
+			// Si la palabra es exit, se termina el programa.
+			if (strFrase == "exit")
+			{
+				bExit = true;
+				fChecksum(strNarchivo);
+			}
+			// Si la frase no es exit, introduce la frase a un string concatenandola con \n para que al desencriptar, haya saltos de linea
+			else
+			{
+				strContenido += strFrase + '\n';
+			}
 		}
-		else
-		{
-			strContenido += strFrase + '\n';
-		}
-		fEncrip(strContenido);
 	}
-
+	// Cuando se sale del bucle, llamamos a las funciones para encriptar y para hacer el checksu,
+	fChecksum(strNarchivo);
+	fEncrip(strContenido, strNarchivo);
 	file.close();
-
 }
 
 
-void fChecksum() {
-	fAbertura();
-	fstream file;
-	file.open("palabras.txt", ios::in);
 
-}
-
-
+// Funcion principal
 void fMenu() {
-
-	if (bVacio())
+	string strNarchivo = "palabras.txt";
+	if (bVacio(strNarchivo))
 	{
 		short sAccion;
 		cout << "Quieres recuperar el contenido?" << endl;
@@ -102,19 +150,31 @@ void fMenu() {
 		cin >> sAccion;
 		if (sAccion == 1)
 		{
-			fDecrip();
+			fDecrip(strNarchivo);
 		}
 		else if (sAccion == 2)
 		{
-			fAbertura();
+			fAbertura(strNarchivo);
 			fstream file;
-			file.open("palabras.txt", std::ofstream::out | std::ofstream::trunc);
+			// Esta linea esta sacada de StackOverflow
+			file.open(strNarchivo, std::ofstream::out | std::ofstream::trunc);
 			file.close();
+			// Insertamos una primera linea provisional para que no haya errores.
+			file.open(strNarchivo);
+			file << "Checksum0";
 		}
 		
 	}
-	
-	fEscribir();
+	else
+	{
+		cout << "El archivo esta vacio";
+		// Insertamos una primera linea provisional para que no haya errores.
+		fstream file;
+		file.open(strNarchivo);
+		file << "Checksum0";
+	}
+	// Llamado a la funcion de escritura
+	fEscribir(strNarchivo);
 
 }
 
