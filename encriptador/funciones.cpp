@@ -85,7 +85,7 @@ void fChecksum(string strNarchivo) {
 	string strContent;
 	fAbertura(strNarchivo);
 	file.open(strNarchivo, ios::in);
-	int iChecksum;
+	int iChecksum = 0;
 	// Leer y descartar la primera línea
 	if (getline(file, strLinea)) {
 		// Leer desde la segunda línea hasta el final del archivo
@@ -98,7 +98,7 @@ void fChecksum(string strNarchivo) {
 		// Guarda el valor ascii del caracter en una variable
 		int iAsci = static_cast<int>(strContent[i]);
 		// Suma el valor al checksum
-		iChecksum = iChecksum + iAsci;
+		iChecksum + iAsci;
 	}
 	//Llama a la funcion que inserta y verifica el checksum
 	fCverif(iChecksum, strNarchivo);
