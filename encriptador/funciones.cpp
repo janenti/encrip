@@ -38,7 +38,6 @@ void fEncrip(string strContenido, string strNarchivo) {
 		char cLetra = strContenido[i] + sDesplazar;
 		strTodo += cLetra;
 	}
-	cout << strTodo << endl;
 	file << endl << strTodo;
 }
 // Funcion que comprueba el antiguo checksum y llama otras fucniones
